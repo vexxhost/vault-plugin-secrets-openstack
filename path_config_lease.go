@@ -16,11 +16,7 @@ func pathConfigLease(b *backend) *framework.Path {
 		Fields: map[string]*framework.FieldSchema{
 			"ttl": &framework.FieldSchema{
 				Type:        framework.TypeDurationSecond,
-				Description: "Duration before which the issued token needs renewal",
-			},
-			"max_ttl": &framework.FieldSchema{
-				Type:        framework.TypeDurationSecond,
-				Description: `Duration after which the issued token should not be allowed to be renewed`,
+				Description: "Duration after which the issued token is revoked",
 			},
 		},
 
@@ -38,8 +34,7 @@ func pathConfigLease(b *backend) *framework.Path {
 // Sets the lease configuration parameters
 func (b *backend) pathLeaseUpdate(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
 	entry, err := logical.StorageEntryJSON("config/lease", &configLease{
-		TTL:    time.Second * time.Duration(d.Get("ttl").(int)),
-		MaxTTL: time.Second * time.Duration(d.Get("max_ttl").(int)),
+		TTL: time.Second * time.Duration(d.Get("ttl").(int)),
 	})
 	if err != nil {
 		return nil, err
@@ -71,8 +66,7 @@ func (b *backend) pathLeaseRead(ctx context.Context, req *logical.Request, data 
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"ttl":     int64(lease.TTL.Seconds()),
-			"max_ttl": int64(lease.MaxTTL.Seconds()),
+			"ttl": int64(lease.TTL.Seconds()),
 		},
 	}, nil
 }
@@ -97,14 +91,12 @@ func (b *backend) LeaseConfig(ctx context.Context, s logical.Storage) (*configLe
 
 // Lease configuration information for the secrets issued by this backend
 type configLease struct {
-	TTL    time.Duration `json:"ttl" mapstructure:"ttl"`
-	MaxTTL time.Duration `json:"max_ttl" mapstructure:"max_ttl"`
+	TTL time.Duration `json:"ttl" mapstructure:"ttl"`
 }
 
 var pathConfigLeaseHelpSyn = "Configure the lease parameters for generated tokens"
 
 var pathConfigLeaseHelpDesc = `
-Sets the ttl and max_ttl values for the secrets to be issued by this backend.
-Both ttl and max_ttl takes in an integer number of seconds as input as well as
-inputs like "1h".
+Sets the ttl values for the applicationCredentials to be issued by the openstack.
+It takes in an integer number of seconds as input as well as inputs like "1h".
 `

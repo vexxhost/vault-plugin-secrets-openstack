@@ -12,7 +12,7 @@ import (
 )
 
 // authenticate in OpenStack and obtain service endpoint
-func OpenstackClient(opts *gophercloud.AuthOptions, regionName string) (*gophercloud.ServiceClient, error) {
+func OpenstackClient(opts gophercloud.AuthOptions, regionName string) (*gophercloud.ServiceClient, error) {
 
 	providerClient, err := openstack.NewClient(opts.IdentityEndpoint)
 	if err != nil {
@@ -38,7 +38,7 @@ func OpenstackClient(opts *gophercloud.AuthOptions, regionName string) (*gopherc
 	}
 	providerClient.HTTPClient.Transport = transport
 
-	if err = openstack.Authenticate(providerClient, *opts); err != nil {
+	if err = openstack.Authenticate(providerClient, opts); err != nil {
 		return nil, err
 	}
 

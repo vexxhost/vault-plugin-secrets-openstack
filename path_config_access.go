@@ -3,7 +3,6 @@ package openstack
 import (
 	"context"
 
-	"github.com/gophercloud/gophercloud"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -69,6 +68,10 @@ func pathConfigAccess(b *backend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: "DomainName",
 			},
+			"Region": &framework.FieldSchema{
+				Type:        framework.TypeString,
+				Description: "Name of the region",
+			},
 		},
 
 		Callbacks: map[logical.Operation]framework.OperationFunc{
@@ -91,7 +94,7 @@ func (b *backend) configExistenceCheck(ctx context.Context, req *logical.Request
 	return entry != nil, nil
 }
 
-func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage) (*gophercloud.AuthOptions, error) {
+func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage) (*authOptions, error) {
 	entry, err := storage.Get(ctx, configAccessKey)
 	if err != nil {
 		return nil, err
@@ -100,7 +103,7 @@ func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage)
 		return nil, nil
 	}
 
-	conf := &gophercloud.AuthOptions{}
+	conf := &authOptions{}
 	if err := entry.DecodeJSON(conf); err != nil {
 		return nil, errwrap.Wrapf("error reading nomad access configuration: {{err}}", err)
 	}
@@ -128,6 +131,7 @@ func (b *backend) pathConfigAccessRead(ctx context.Context, req *logical.Request
 			"DomainName":                conf.DomainName,
 			"ApplicationCredentialID":   conf.ApplicationCredentialID,
 			"ApplicationCredentialName": conf.ApplicationCredentialName,
+			"Region":                    conf.Region,
 		},
 	}, nil
 }
@@ -138,7 +142,7 @@ func (b *backend) pathConfigAccessWrite(ctx context.Context, req *logical.Reques
 		return nil, err
 	}
 	if conf == nil {
-		conf = &gophercloud.AuthOptions{}
+		conf = &authOptions{}
 	}
 
 	auth_url, ok := data.GetOk("IdentityEndpoint")
@@ -185,6 +189,10 @@ func (b *backend) pathConfigAccessWrite(ctx context.Context, req *logical.Reques
 	if ok {
 		conf.ApplicationCredentialSecret = credential_secret.(string)
 	}
+	region, ok := data.GetOk("Region")
+	if ok {
+		conf.Region = region.(string)
+	}
 
 	entry, err := logical.StorageEntryJSON(configAccessKey, conf)
 	if err != nil {
@@ -202,4 +210,19 @@ func (b *backend) pathConfigAccessDelete(ctx context.Context, req *logical.Reque
 		return nil, err
 	}
 	return nil, nil
+}
+
+type authOptions struct {
+	IdentityEndpoint            string
+	UserID                      string
+	Username                    string
+	Password                    string
+	TenantID                    string
+	TenantName                  string
+	DomainID                    string
+	DomainName                  string
+	ApplicationCredentialID     string
+	ApplicationCredentialName   string
+	ApplicationCredentialSecret string
+	Region                      string
 }
