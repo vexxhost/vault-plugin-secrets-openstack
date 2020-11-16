@@ -1,4 +1,4 @@
-package mock
+package openstack
 
 import (
 	"context"
@@ -143,47 +143,47 @@ func (b *backend) pathConfigAccessWrite(ctx context.Context, req *logical.Reques
 
 	auth_url, ok := data.GetOk("IdentityEndpoint")
 	if ok {
-		conf.Address = auth_url.(string)
+		conf.IdentityEndpoint = auth_url.(string)
 	}
 	user_id, ok := data.GetOk("UserID")
 	if ok {
-		conf.Token = user_id.(string)
+		conf.UserID = user_id.(string)
 	}
 	username, ok := data.GetOk("Username")
 	if ok {
-		conf.CACert = username.(string)
+		conf.Username = username.(string)
 	}
 	password, ok := data.GetOk("Password")
 	if ok {
-		conf.ClientCert = password.(string)
+		conf.Password = password.(string)
 	}
 	project_id, ok := data.GetOk("TenantID")
 	if ok {
-		conf.ClientKey = project_id.(string)
+		conf.TenantID = project_id.(string)
 	}
 	project_name, ok := data.GetOk("TenantName")
 	if ok {
-		conf.Token = project_name.(string)
+		conf.TenantName = project_name.(string)
 	}
 	domain_id, ok := data.GetOk("DomainID")
 	if ok {
-		conf.Token = domain_id.(string)
+		conf.DomainID = domain_id.(string)
 	}
 	domain_name, ok := data.GetOk("DomainName")
 	if ok {
-		conf.Token = domain_name.(string)
+		conf.DomainName = domain_name.(string)
 	}
 	credential_id, ok := data.GetOk("ApplicationCredentialID")
 	if ok {
-		conf.Token = credential_id.(string)
+		conf.ApplicationCredentialID = credential_id.(string)
 	}
 	credential_name, ok := data.GetOk("ApplicationCredentialName")
 	if ok {
-		conf.Token = credential_name.(string)
+		conf.ApplicationCredentialName = credential_name.(string)
 	}
 	credential_secret, ok := data.GetOk("ApplicationCredentialSecret")
 	if ok {
-		conf.Token = credential_secret.(string)
+		conf.ApplicationCredentialSecret = credential_secret.(string)
 	}
 
 	entry, err := logical.StorageEntryJSON(configAccessKey, conf)

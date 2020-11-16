@@ -1,17 +1,18 @@
-package mock
+package openstack
 
 import (
 	"context"
 
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
+	"github.com/vexxhost/vault-plugin-secrets-openstack/utils"
 )
 
 // maxTokenNameLength is the maximum length for the name of a Nomad access
 // token
 const maxTokenNameLength = 256
 
-func pathCredsCreate(b *backend) *framework.Path {
+func pathCreateCreds(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: "creds/" + framework.GenericNameRegex("name"),
 		Fields: map[string]*framework.FieldSchema{
@@ -46,13 +47,13 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 	}
 
 	// Get the service client
-	serviceClient, err := b.openstackClient(conf, region_name)
+	serviceClient, err := utils.OpenstackClient(conf, region_name)
 	if err != nil {
 		return nil, err
 	}
 
 	// Create it
-	id, secret, err := b.CreateApplicationCredential(serviceClient, conf.UserID, name)
+	id, secret, err := utils.CreateApplicationCredential(serviceClient, conf.UserID, name)
 	if err != nil {
 		return nil, err
 	}

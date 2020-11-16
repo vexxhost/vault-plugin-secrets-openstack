@@ -1,11 +1,10 @@
-package mock
+package openstack
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/hashicorp/consul/api"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -19,7 +18,7 @@ type backend struct {
 
 var _ logical.Factory = Factory
 
-// Factory configures and returns Mock backends
+// Factory configures and returns openstack backends
 func Factory(ctx context.Context, conf *logical.BackendConfig) (logical.Backend, error) {
 	b, err := newBackend()
 	if err != nil {
@@ -43,12 +42,12 @@ func newBackend() (*backend, error) {
 	}
 
 	b.Backend = &framework.Backend{
-		Help:        strings.TrimSpace(mockHelp),
+		Help:        strings.TrimSpace(openstackHelp),
 		BackendType: logical.TypeLogical,
 
 		Paths: []*framework.Path{
 			pathConfigAccess(b),
-			pathConfigCred(b),
+			pathCreateCreds(b),
 			pathConfigLease(b),
 		},
 		Secrets: []*framework.Secret{
@@ -59,39 +58,7 @@ func newBackend() (*backend, error) {
 	return b, nil
 }
 
-func (b *backend) client(ctx context.Context, s logical.Storage) (*api.Client, error) {
-	conf, err := b.readConfigAccess(ctx, s)
-	if err != nil {
-		return nil, err
-	}
-
-	nomadConf := api.DefaultConfig()
-	if conf != nil {
-		if conf.Address != "" {
-			nomadConf.Address = conf.Address
-		}
-		if conf.Token != "" {
-			nomadConf.SecretID = conf.Token
-		}
-		if conf.CACert != "" {
-			nomadConf.TLSConfig.CACertPEM = []byte(conf.CACert)
-		}
-		if conf.ClientCert != "" {
-			nomadConf.TLSConfig.ClientCertPEM = []byte(conf.ClientCert)
-		}
-		if conf.ClientKey != "" {
-			nomadConf.TLSConfig.ClientKeyPEM = []byte(conf.ClientKey)
-		}
-	}
-
-	client, err := api.NewClient(nomadConf)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
-const mockHelp = `
-The Mock backend is a dummy secrets backend that stores kv pairs in a map.
+const openstackHelp = `
+The Openstack backend is a secrets backend that interacts with openstack api 
+to create ApplicationCredentials.
 `
