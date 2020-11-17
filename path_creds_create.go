@@ -10,10 +10,6 @@ import (
 	"github.com/hashicorp/vault/sdk/logical"
 )
 
-// maxTokenNameLength is the maximum length for the name of a Nomad access
-// token
-const maxTokenNameLength = 256
-
 func pathCreateCreds(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: "creds/" + framework.GenericNameRegex("name"),
