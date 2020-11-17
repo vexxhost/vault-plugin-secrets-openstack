@@ -2,6 +2,8 @@ package openstack
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
@@ -31,11 +33,6 @@ func pathCreateCreds(b *backend) *framework.Path {
 func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
 	name := d.Get("name").(string)
 
-	c, err := b.client(ctx, req.Storage)
-	if err != nil {
-		return nil, errwrap.Wrapf("error retrieving appCredentialClient: {{err}}", err)
-	}
-
 	// Determine if we have a lease configuration
 	leaseConfig, err := b.LeaseConfig(ctx, req.Storage)
 	if err != nil {
@@ -46,10 +43,24 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 		leaseConfig = &configLease{}
 	}
 
-	// Create it
-	id, secret, err := c.Create(name)
+	role, err := b.Role(ctx, req.Storage, name)
 	if err != nil {
-		b.Logger().Warn("get applicationcredential", "error", err)
+		return nil, errwrap.Wrapf("error retrieving role: {{err}}", err)
+	}
+	if role == nil {
+		return logical.ErrorResponse(fmt.Sprintf("role %q not found", name)), nil
+	}
+
+	c, err := b.client(ctx, req.Storage)
+	if err != nil {
+		return nil, errwrap.Wrapf("error retrieving appCredentialClient: {{err}}", err)
+	}
+
+	// Create it
+	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano())
+	id, secret, err := c.Create(tokenName)
+	if err != nil {
+		b.Logger().Warn("Create applicationcredential", "error", err)
 		return nil, err
 	}
 
