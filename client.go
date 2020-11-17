@@ -48,8 +48,8 @@ func (b *backend) client(ctx context.Context, s logical.Storage) (*appCredential
 	}, nil
 }
 
-func (c *appCredentialClient) Create(name string) (string, string, error) {
-	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name)
+func (c *appCredentialClient) Create(name string, roles []Role, accessrules []AccessRule) (string, string, error) {
+	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles, accessrules)
 }
 
 func (c *appCredentialClient) Delete(id string) error {

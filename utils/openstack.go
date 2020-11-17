@@ -55,9 +55,11 @@ func OpenstackClient(opts gophercloud.AuthOptions, regionName string) (*gophercl
 }
 
 // CreateApplicationCredential creates a applicationCredential
-func CreateApplicationCredential(client *gophercloud.ServiceClient, userID string, name string) (string, string, error) {
+func CreateApplicationCredential(client *gophercloud.ServiceClient, userID string, name string, roles []applicationcredentials.Role, accessrules []applicationcredentials.AccessRule) (string, string, error) {
 	opts := applicationcredentials.CreateOpts{
-		Name: name,
+		Name:        name,
+		Roles:       roles,
+		AccessRules: accessrules,
 	}
 	credential, err := applicationcredentials.Create(client, userID, opts).Extract()
 	if err != nil {
