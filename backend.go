@@ -49,6 +49,8 @@ func newBackend() (*backend, error) {
 			pathConfigAccess(b),
 			pathCreateCreds(b),
 			pathConfigLease(b),
+			pathListRoles(b),
+			pathRoles(b),
 		},
 		Secrets: []*framework.Secret{
 			secretToken(b),

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/gophercloud/gophercloud"
+	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
 	"github.com/hashicorp/vault/sdk/logical"
 	"github.com/vexxhost/vault-plugin-secrets-openstack/utils"
 )
@@ -48,8 +49,8 @@ func (b *backend) client(ctx context.Context, s logical.Storage) (*appCredential
 	}, nil
 }
 
-func (c *appCredentialClient) Create(name string, roles []Role, accessrules []AccessRule) (string, string, error) {
-	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles, accessrules)
+func (c *appCredentialClient) Create(name string, roles []applicationcredentials.Role) (string, string, error) { //, accessrules []applicationcredentials.AccessRule
+	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles) //, accessrules
 }
 
 func (c *appCredentialClient) Delete(id string) error {

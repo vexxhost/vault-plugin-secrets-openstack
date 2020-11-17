@@ -58,12 +58,11 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 
 	// Create it
 	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano())
-	id, secret, err := c.Create(tokenName, role.Roles, role.AccessRules)
+	id, secret, err := c.Create(tokenName, role.Roles) //, role.AccessRules)
 	if err != nil {
 		b.Logger().Warn("Create applicationcredential", "error", err)
 		return nil, err
 	}
-
 	// Use the helper to create the secret
 	resp := b.Secret(SecretTokenType).Response(map[string]interface{}{
 		"application_credential_id":     id,

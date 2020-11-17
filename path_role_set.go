@@ -2,8 +2,10 @@ package openstack
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
+	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
 	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
@@ -72,11 +74,11 @@ func (b *backend) Role(ctx context.Context, storage logical.Storage, name string
 		return nil, nil
 	}
 
-	var result RoleSet
-	if err := entry.DecodeJSON(&result); err != nil {
+	result := &RoleSet{}
+	if err := entry.DecodeJSON(result); err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return result, nil
 }
 
 func (b *backend) pathRoleList(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
@@ -102,8 +104,8 @@ func (b *backend) pathRolesRead(ctx context.Context, req *logical.Request, d *fr
 	// Generate the response
 	resp := &logical.Response{
 		Data: map[string]interface{}{
-			"Roles":       role.Roles,
-			"AccessRules": role.AccessRules,
+			"Roles": role.Roles,
+			// "AccessRules": role.AccessRules,
 		},
 	}
 	return resp, nil
@@ -122,13 +124,18 @@ func (b *backend) pathRolesWrite(ctx context.Context, req *logical.Request, d *f
 
 	rawRoles, ok := d.GetOk("Roles")
 	if ok {
-		role.Roles = rawRoles.([]Role)
+		roles := make([]applicationcredentials.Role, 0, 10)
+		err := json.Unmarshal([]byte(rawRoles.(string)), &roles)
+		if err != nil {
+			return nil, err
+		}
+		role.Roles = roles
 	}
 
-	rawAccessRules, ok := d.GetOk("AccessRules")
-	if ok {
-		role.AccessRules = rawAccessRules.([]AccessRule)
-	}
+	// rawAccessRules, ok := d.GetOk("AccessRules")
+	// if ok {
+	// 	role.AccessRules = rawAccessRules.([]applicationcredentials.AccessRule)
+	// }
 
 	entry, err := logical.StorageEntryJSON("roleset/"+name, role)
 	if err != nil {
@@ -150,29 +157,7 @@ func (b *backend) pathRolesDelete(ctx context.Context, req *logical.Request, d *
 	return nil, nil
 }
 
-type Role struct {
-	// DomainID is the domain ID the role belongs to.
-	DomainID string `json:"domain_id,omitempty"`
-	// ID is the unique ID of the role.
-	ID string `json:"id,omitempty"`
-	// Name is the role name
-	Name string `json:"name,omitempty"`
-}
-
-type AccessRule struct {
-	// The ID of the access rule
-	ID string `json:"id,omitempty"`
-	// The API path that the application credential is permitted to access
-	Path string `json:"path,omitempty"`
-	// The request method that the application credential is permitted to use for a
-	// given API endpoint
-	Method string `json:"method,omitempty"`
-	// The service type identifier for the service that the application credential
-	// is permitted to access
-	Service string `json:"service,omitempty"`
-}
-
 type RoleSet struct {
-	Roles       []Role       `json:"roles,omitempty"`
-	AccessRules []AccessRule `json:"access_rules,omitempty"`
+	Roles []applicationcredentials.Role `json:"roles,omitempty"`
+	// AccessRules []applicationcredentials.AccessRule `json:"access_rules,omitempty"`
 }
