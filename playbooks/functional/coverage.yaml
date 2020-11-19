@@ -1,0 +1,5 @@
+- hosts: all
+  tasks:
+  - name: Configure helm value for helm-operator
+    shell: |
+      go test -coverprofile fmtcoverage.html fmt

@@ -1,4 +1,13 @@
 ---
+- job:
+    name: golang-coverage
+    run: playbooks/functional/coverage.yaml
 - project:
     templates:
     - golang-jobs
+    check:
+      jobs:
+      - golang-coverage
+    gate:
+      jobs:
+      - golang-coverage
