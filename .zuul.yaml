@@ -3,18 +3,16 @@
     name: golang-coverage
     parent: golang-go
     vars:
-      go_command: test -coverprofile fmtcoverage.html fmt
+      go_command: "test -coverprofile fmtcoverage.html fmt"
 
 - project:
-    templates:
-    - golang-jobs
     check:
       jobs:
       - golangci-lint
-      - golanggo-test
+      - golang-go-test
       - golang-coverage
     gate:
       jobs:
       - golangci-lint
-      - golanggo-test
+      - golang-go-test
       - golang-coverage
