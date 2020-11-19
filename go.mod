@@ -9,4 +9,5 @@ require (
 	github.com/hashicorp/vault/api v1.0.2
 	github.com/hashicorp/vault/sdk v0.1.11
 	github.com/sirupsen/logrus v1.7.0
+	golang.org/x/tools v0.0.0-20201118174508-6ed8ff9ad920 // indirect
 )
