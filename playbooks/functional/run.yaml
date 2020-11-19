@@ -1,6 +1,4 @@
 - hosts: all
-  roles:
-    - ensure-go
   tasks:
   - name: Configure helm value for helm-operator
     shell: |

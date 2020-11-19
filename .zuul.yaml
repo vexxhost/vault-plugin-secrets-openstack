@@ -1,7 +1,8 @@
 ---
 - job:
     name: golang-coverage
-    run: playbooks/functional/coverage.yaml
+    pre-run: playbooks/functional/pre.yaml
+    run: playbooks/functional/run.yaml
 - project:
     templates:
     - golang-jobs
