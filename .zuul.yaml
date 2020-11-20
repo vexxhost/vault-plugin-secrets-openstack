@@ -1,7 +1,7 @@
 ---
 - job:
     name: golang-coverage
-    parent: golang-go
+    parent: unittests
     run: playbooks/coverage.yaml
 
 
