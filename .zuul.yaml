@@ -2,8 +2,8 @@
 - job:
     name: golang-coverage
     parent: golang-go
-    vars:
-      go_command: "test -coverprofile fmtcoverage.html fmt"
+    run: playbooks/coverage.yaml
+
 
 - project:
     check:
