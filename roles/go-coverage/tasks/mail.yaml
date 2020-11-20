@@ -5,5 +5,5 @@
 - name: Decide if it is allowed
   fail:
     msg: "The coverage is not much enough. Please try to write more tests."
-  when: coverage_percentage.stdout|int > 80
+  when: coverage_percentage.stdout|int > {{ coverage_percentage_threshold }}
       
