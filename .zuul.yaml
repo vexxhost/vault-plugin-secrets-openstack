@@ -2,7 +2,8 @@
 - job:
     name: golang-coverage
     parent: unittests
-    run: playbooks/coverage.yaml
+    pre-run: playbooks/coverage/pre-run.yaml
+    run: playbooks/coverage/run.yaml
 
 
 - project:
