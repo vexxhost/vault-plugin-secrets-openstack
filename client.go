@@ -20,7 +20,7 @@ func (b *backend) client(ctx context.Context, s logical.Storage) (*appCredential
 		b.Logger().Warn("get access config", "error", err)
 		return nil, err
 	}
-	b.Logger().Warn("Creds", "start!!", err)
+
 	authOpts := gophercloud.AuthOptions{
 		IdentityEndpoint:            authConfig.IdentityEndpoint,
 		UserID:                      authConfig.UserID,
