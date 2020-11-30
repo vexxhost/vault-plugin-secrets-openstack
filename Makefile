@@ -17,7 +17,7 @@ all: fmt build lint start
 build:
 	GOOS=$(OS) GOARCH="$(GOARCH)" go build -o vault/plugins/vault-plugin-secrets-openstack cmd/vault-plugin-secrets-openstack/main.go
 
-start:
+start: build
 	vault server -dev -dev-root-token-id=root -dev-plugin-dir=./vault/plugins
 
 enable:
