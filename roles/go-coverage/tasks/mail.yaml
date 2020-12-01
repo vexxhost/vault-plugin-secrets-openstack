@@ -1,0 +1,9 @@
+- name: Go coverage
+  shell: |
+    go test -coverprofile fmtcoverage.html fmt|cut -d' ' -f4|cut -d'%' -f1
+  register: coverage_percentage
+- name: Decide if it is allowed
+  fail:
+    msg: "The coverage is not much enough. Please try to write more tests."
+  when: coverage_percentage.stdout|int > {{ coverage_percentage_threshold }}
+      
