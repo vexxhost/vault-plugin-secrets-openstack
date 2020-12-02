@@ -2,6 +2,7 @@ package openstack
 
 import (
 	"context"
+	"time"
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
@@ -49,8 +50,8 @@ func (b *backend) client(ctx context.Context, s logical.Storage) (*appCredential
 	}, nil
 }
 
-func (c *appCredentialClient) Create(name string, roles []applicationcredentials.Role) (string, string, error) { //, accessrules []applicationcredentials.AccessRule
-	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles) //, accessrules
+func (c *appCredentialClient) Create(name string, roles []applicationcredentials.Role, ttl time.Duration) (string, string, error) { //, accessrules []applicationcredentials.AccessRule
+	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles, ttl) //, accessrules
 }
 
 func (c *appCredentialClient) Delete(id string) error {
