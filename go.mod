@@ -1,6 +1,6 @@
 module github.com/vexxhost/vault-plugin-secrets-openstack
 
-go 1.12
+go 1.19
 
 require (
 	github.com/gophercloud/gophercloud v1.1.1
