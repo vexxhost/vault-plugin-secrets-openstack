@@ -53,7 +53,7 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 	}
 
 	// Create it
-	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano())
+	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano()/int64(time.Millisecond))
 	id, secret, err := c.Create(tokenName, role.Roles, leaseConfig.TTL) //, role.AccessRules)
 	if err != nil {
 		b.Logger().Warn("Create applicationcredential", "error", err)

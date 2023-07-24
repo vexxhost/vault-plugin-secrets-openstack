@@ -24,22 +24,8 @@ func secretToken(b *backend) *framework.Secret {
 			},
 		},
 
-		Renew:  b.secretTokenRenew,
 		Revoke: b.secretTokenRevoke,
 	}
-}
-
-func (b *backend) secretTokenRenew(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
-	lease, err := b.LeaseConfig(ctx, req.Storage)
-	if err != nil {
-		return nil, err
-	}
-	if lease == nil {
-		lease = &configLease{}
-	}
-	resp := &logical.Response{Secret: req.Secret}
-	resp.Secret.TTL = lease.TTL
-	return resp, nil
 }
 
 func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {

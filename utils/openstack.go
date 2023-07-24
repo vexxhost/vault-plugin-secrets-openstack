@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 	"time"
+	"fmt"
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -58,10 +59,12 @@ func OpenstackClient(opts gophercloud.AuthOptions, regionName string) (*gophercl
 func CreateApplicationCredential(client *gophercloud.ServiceClient, userID string, name string, roles []applicationcredentials.Role, ttl time.Duration) (string, string, error) { //, accessrules []applicationcredentials.AccessRule
 
 	expireTime := time.Now().Add(ttl)
+	appCredDescription := fmt.Sprintf("Created by Vault at %s", time.Now().Format(time.RFC3339))
 	opts := applicationcredentials.CreateOpts{
-		Name:      name,
-		Roles:     roles,
-		ExpiresAt: &expireTime,
+		Name:        name,
+		Description: appCredDescription,
+		Roles:       roles,
+		ExpiresAt:   &expireTime,
 		// AccessRules: accessrules,
 	}
 	credential, err := applicationcredentials.Create(client, userID, opts).Extract()
