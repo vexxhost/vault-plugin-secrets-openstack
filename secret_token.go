@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -35,7 +34,7 @@ func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d
 	}
 
 	if c == nil {
-		return nil, errwrap.Wrapf("error retrieving appCredentialClient: {{err}}", err)
+		return nil, fmt.Errorf("error retrieving appCredentialClient: %w", err)
 	}
 
 	IDRaw, ok := req.Secret.InternalData["application_credential_id"]

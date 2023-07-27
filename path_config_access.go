@@ -2,8 +2,8 @@ package openstack
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -105,7 +105,7 @@ func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage)
 
 	conf := &authOptions{}
 	if err := entry.DecodeJSON(conf); err != nil {
-		return nil, errwrap.Wrapf("error reading nomad access configuration: {{err}}", err)
+		return nil, fmt.Errorf("error reading nomad access configuration: %w", err)
 	}
 
 	return conf, nil

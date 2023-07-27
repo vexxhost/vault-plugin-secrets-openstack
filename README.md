@@ -28,7 +28,7 @@ In order to get started, you'll need to enable and configure the secret engine
 by running the following:
 
 ```shell
-vault secrets enable -path=openstack -plugin-name=vault-plugin-secrets-openstack
+vault secrets enable -path="openstack" -plugin-name="vault-plugin-secrets-openstack" plugin
 vault write openstack/config/lease ttl=60
 vault write openstack/config/auth IdentityEndpoint="https://auth.vexxhost.net/v3" \
                                     UserID="<user_id>" \

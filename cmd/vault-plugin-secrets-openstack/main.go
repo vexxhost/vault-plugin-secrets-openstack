@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/sdk/plugin"
+
 	openstack "github.com/vexxhost/vault-plugin-secrets-openstack"
 )
 
