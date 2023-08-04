@@ -4,14 +4,33 @@ This is a Vault secret engine plugin which allows you to generate OpenStack
 application credentials which can automatically expire (and also scoped out
 to specific roles as well).
 
-# Usage
+## Usage
+
+Move the compiled plugin into Vault's configured [`plugin_directory`](https://www.vaultproject.io/docs/configuration/index.html#plugin_directory):
+
+```shell
+mv vault-plugin-secrets-openstack /etc/vault/plugins/vault-plugin-secrets-openstack
+```
+
+Calculate the SHA256 of the plugin and register it in Vault's plugin catalog:
+
+```shell
+export SHA256=$(shasum -a 256 "/etc/vault/plugins/vault-plugin-secrets-openstack" | cut -d' ' -f1)
+
+vault write sys/plugins/catalog/vault-plugin-secrets-openstack \
+              sha_256="${SHA256}" \
+              command="vault-plugin-secrets-openstack"
+
+Success! Data written to: sys/plugins/catalog/vault-plugin-secrets-openstack
+```
+
 In order to get started, you'll need to enable and configure the secret engine
 by running the following:
 
-```console
-$ vault secrets enable -path=openstack vault-plugin-secrets-openstack
-$ vault write openstack/config/lease ttl=60
-$ vault write openstack/config/auth IdentityEndpoint="https://auth.vexxhost.net/v3" \
+```shell
+vault secrets enable -path="openstack" -plugin-name="vault-plugin-secrets-openstack" plugin
+vault write openstack/config/lease ttl=60
+vault write openstack/config/auth IdentityEndpoint="https://auth.vexxhost.net/v3" \
                                     UserID="<user_id>" \
                                     Password="<password>" \
                                     TenantID="<tenant_id>"
@@ -27,8 +46,8 @@ The next step you'll need to do is create a roleset which will be used when
 creating application credentials.  In this example, it is using the default
 member role inside the VEXXHOST public cloud.
 
-```console
-$ vault write openstack/roleset/member Roles=-<<EOF
+```shell
+vault write openstack/roleset/member Roles=-<<EOF
 [
   {
     "ID": "9fe2ff9ee4384b1894a90878d3e92bab"
@@ -41,38 +60,39 @@ Now, in order to create an application credential which will expire within
 60 seconds based on the configured time to live, you can run a `read` on the
 `auth` endpoint.
 
-```console
-$ vault read openstack/creds/member
+```shell
+vault read openstack/creds/member
 ey                              Value
 ---                              -----
 lease_id                         openstack/creds/member/alWy2bskdhoroBKSUlKX6UgR
 lease_duration                   1m
-lease_renewable                  true
+lease_renewable                  false
 application_credential_id        <snip>
 application_credential_secret    <snip>
 ```
 
 You'll see that an application credential was issued once you run this command:
 
-```console
-$ openstack application credential list
-+----------------------------------+----------------------------------------+----------------------------------+-------------+------------+
-| ID                               | Name                                   | Project ID                       | Description | Expires At |
-+----------------------------------+----------------------------------------+----------------------------------+-------------+------------+
-| bc70b161405740b9927d10b45be7502c | vault-member-token-1606779565965295355 | 8709ca2640344a4ba85cba0a1d6eea69 | None        | None       |
-+----------------------------------+----------------------------------------+----------------------------------+-------------+------------+
+```shell
+openstack application credential list
++----------------------------------+----------------------------------------+----------------------------------+------------------------------------------+----------------------------+
+| ID                               | Name                                   | Project ID                       | Description                              | Expires At                 |
++----------------------------------+----------------------------------------+----------------------------------+------------------------------------------+----------------------------+
+| bc70b161405740b9927d10b45be7502c | vault-member-token-1674140730969888877 | 8709ca2640344a4ba85cba0a1d6eea69 | Created by Vault at 2023-01-19T15:05:30Z | 2023-01-19T15:15:30.970151 |
++----------------------------------+----------------------------------------+----------------------------------+------------------------------------------+----------------------------+
 ```
 
 After the 60 seconds are up, you'll see that the token no longer exists in there
 and the lease is revoked.
 
 ## Development
+
 In order to run the plugin locally, you'll need to have Vault installed inside
 your `$PATH` and run the following inside your terminal which will both build
 the plugin and start up Vault.
 
-```console
-$ make start
+```shell
+make start
 ```
 
 At this point, you can refer to the [Usage](#Usage) section for how to enable the plugin

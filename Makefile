@@ -21,7 +21,7 @@ start: build
 	vault server -dev -dev-root-token-id=root -dev-plugin-dir=./vault/plugins
 
 enable:
-	vault secrets enable -path=openstack vault-plugin-secrets-openstack
+	vault secrets enable -path="openstack" -plugin-name="vault-plugin-secrets-openstack" plugin
 
 clean:
 	rm -f ./vault/plugins/vault-plugin-secrets-openstack

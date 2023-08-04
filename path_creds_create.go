@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -41,7 +40,7 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 
 	role, err := b.Role(ctx, req.Storage, name)
 	if err != nil {
-		return nil, errwrap.Wrapf("error retrieving role: {{err}}", err)
+		return nil, fmt.Errorf("error retrieving role: %w", err)
 	}
 	if role == nil {
 		return logical.ErrorResponse(fmt.Sprintf("role %q not found", name)), nil
@@ -49,11 +48,11 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 
 	c, err := b.client(ctx, req.Storage)
 	if err != nil {
-		return nil, errwrap.Wrapf("error retrieving appCredentialClient: {{err}}", err)
+		return nil, fmt.Errorf("error retrieving appCredentialClient: %w", err)
 	}
 
 	// Create it
-	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano())
+	tokenName := fmt.Sprintf("vault-%s-%s-%d", name, req.DisplayName, time.Now().UnixNano()/int64(time.Millisecond))
 	id, secret, err := c.Create(tokenName, role.Roles, leaseConfig.TTL) //, role.AccessRules)
 	if err != nil {
 		b.Logger().Warn("Create applicationcredential", "error", err)

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -24,22 +23,8 @@ func secretToken(b *backend) *framework.Secret {
 			},
 		},
 
-		Renew:  b.secretTokenRenew,
 		Revoke: b.secretTokenRevoke,
 	}
-}
-
-func (b *backend) secretTokenRenew(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
-	lease, err := b.LeaseConfig(ctx, req.Storage)
-	if err != nil {
-		return nil, err
-	}
-	if lease == nil {
-		lease = &configLease{}
-	}
-	resp := &logical.Response{Secret: req.Secret}
-	resp.Secret.TTL = lease.TTL
-	return resp, nil
 }
 
 func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
@@ -49,7 +34,7 @@ func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d
 	}
 
 	if c == nil {
-		return nil, errwrap.Wrapf("error retrieving appCredentialClient: {{err}}", err)
+		return nil, fmt.Errorf("error retrieving appCredentialClient: %w", err)
 	}
 
 	IDRaw, ok := req.Secret.InternalData["application_credential_id"]

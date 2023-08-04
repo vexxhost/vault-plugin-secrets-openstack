@@ -1,0 +1,45 @@
+---
+builds:
+  - id: vault-plugin-secrets-openstack
+    main: ./cmd/vault-plugin-secrets-openstack
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - freebsd
+      - windows
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - '386'
+      - arm
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: '386'
+      # arm 8
+      - goos: freebsd
+        goarch: arm64
+      - goos: windows
+        goarch: arm64
+      # arm 6
+      - goos: darwin
+        goarch: arm
+      - goos: freebsd
+        goarch: arm
+      - goos: windows
+        goarch: arm
+    binary: vault-plugin-secrets-openstack
+
+archives:
+  - id: vault-plugin-secrets-openstack
+    builds:
+      - vault-plugin-secrets-openstack
+    name_template: "vault-plugin-secrets-openstack_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  sort: asc

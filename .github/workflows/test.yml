@@ -1,0 +1,41 @@
+---
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+      - uses: golangci/golangci-lint-action@v3
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+      - run: go build -o vault-plugin-secrets-openstack cmd/vault-plugin-secrets-openstack/main.go
+
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+      - run: go test ./... -coverprofile=./cover.out
+      - uses: vladopajic/go-test-coverage@v2
+        with:
+          profile: cover.out
+          local-prefix: github.com/vexxhost/vault-plugin-secrets-openstack
+          threshold-file: 80
+          threshold-package: 80
+          threshold-total: 95

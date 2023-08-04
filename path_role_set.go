@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
-	"github.com/hashicorp/errwrap"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -68,7 +68,7 @@ func (b *backend) Role(ctx context.Context, storage logical.Storage, name string
 
 	entry, err := storage.Get(ctx, "roleset/"+name)
 	if err != nil {
-		return nil, errwrap.Wrapf("error retrieving roleset: {{err}}", err)
+		return nil, fmt.Errorf("error retrieving roleset: %w", err)
 	}
 	if entry == nil {
 		return nil, nil
