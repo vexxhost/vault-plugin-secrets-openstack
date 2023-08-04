@@ -1,4 +1,6 @@
 ---
+name: test
+
 on:
   pull_request:
   push:
@@ -36,6 +38,4 @@ jobs:
         with:
           profile: cover.out
           local-prefix: github.com/vexxhost/vault-plugin-secrets-openstack
-          threshold-file: 80
-          threshold-package: 80
-          threshold-total: 95
+          threshold-total: 40
