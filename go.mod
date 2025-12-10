@@ -3,7 +3,7 @@ module github.com/vexxhost/vault-plugin-secrets-openstack
 go 1.24.0
 
 require (
-	github.com/gophercloud/gophercloud/v2 v2.3.0
+	github.com/gophercloud/gophercloud/v2 v2.9.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/hashicorp/vault/sdk v0.14.0
