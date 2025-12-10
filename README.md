@@ -24,55 +24,102 @@ vault write sys/plugins/catalog/vault-plugin-secrets-openstack \
 Success! Data written to: sys/plugins/catalog/vault-plugin-secrets-openstack
 ```
 
-In order to get started, you'll need to enable and configure the secret engine
-by running the following:
+### Configuration
+
+Enable and configure the secret engine:
 
 ```shell
 vault secrets enable -path="openstack" -plugin-name="vault-plugin-secrets-openstack" plugin
 vault write openstack/config/lease ttl=60
 vault write openstack/config/auth auth_url="https://auth.vexxhost.net/v3" \
                                     user_id="<user_id>" \
-                                    password="<password>" \
-                                    project_id="<project_id>"
+                                    password="<password>"
 ```
 
 The example above configures a default lease of 60 seconds and points to the
-VEXXHOST public cloud authentication endpoint.  You'll need to replace your
-user ID, password and project ID in the example above.
+VEXXHOST public cloud authentication endpoint.
 
-Additional configuration options are available:
+#### Authentication Options
 
-- `username` - Username for authentication (alternative to `user_id`)
+The plugin supports two authentication methods:
+
+**Username/Password** (recommended for multi-project support):
+- `auth_url` - OpenStack authentication URL
+- `user_id` or `username` - User credentials
+- `password` - User password
 - `user_domain_id` / `user_domain_name` - Domain for user authentication
-- `project_name` - Project name (alternative to `project_id`)
-- `project_domain_id` / `project_domain_name` - Domain for project scoping
-- `application_credential_id` / `application_credential_name` / `application_credential_secret` - Application credential authentication
+
+**Application Credentials** (for single-project use):
+- `auth_url` - OpenStack authentication URL
+- `application_credential_id` or `application_credential_name` - Application credential identifier
+- `application_credential_secret` - Application credential secret
+
+**Additional Options:**
 - `region_name` - Region name for endpoint selection
 - `cacert` - PEM-encoded CA certificate for TLS verification
 - `cert` / `key` - PEM-encoded client certificate and key for mutual TLS
 - `insecure` - Skip TLS verification (not recommended for production)
 
-The next step you'll need to do is create a roleset which will be used when
-creating application credentials.  In this example, it is using the default
-member role inside the VEXXHOST public cloud.
+### Rolesets
+
+Create a roleset to define what application credentials will be created. Rolesets
+can optionally specify a project scope.
+
+**Single-project mode** (with application credential auth):
 
 ```shell
 vault write openstack/roleset/member roles=-<<EOF
 [
   {
-    "ID": "9fe2ff9ee4384b1894a90878d3e92bab"
+    "id": "9fe2ff9ee4384b1894a90878d3e92bab"
   }
 ]
 EOF
 ```
 
-Now, in order to create an application credential which will expire within
-60 seconds based on the configured time to live, you can run a `read` on the
-`auth` endpoint.
+**Multi-project mode** (with username/password auth):
+
+```shell
+# Roleset for project A
+vault write openstack/roleset/project-a-member \
+    project_id="<project_a_id>" \
+    roles=-<<EOF
+[
+  {
+    "id": "9fe2ff9ee4384b1894a90878d3e92bab"
+  }
+]
+EOF
+
+# Roleset for project B
+vault write openstack/roleset/project-b-admin \
+    project_id="<project_b_id>" \
+    roles=-<<EOF
+[
+  {
+    "id": "admin_role_id"
+  }
+]
+EOF
+```
+
+Roleset options:
+- `project_id` / `project_name` - Project to scope the application credential to
+- `project_domain_id` / `project_domain_name` - Domain for project scoping
+- `roles` - JSON array of roles for the application credential
+
+> **Note:** When using application credential authentication, project fields in
+> rolesets are not supported (application credentials are bound to their original
+> project). Use username/password authentication for multi-project support.
+
+### Generating Credentials
+
+To create an application credential which will expire within 60 seconds based
+on the configured time to live:
 
 ```shell
 vault read openstack/creds/member
-ey                              Value
+Key                              Value
 ---                              -----
 lease_id                         openstack/creds/member/alWy2bskdhoroBKSUlKX6UgR
 lease_duration                   1m

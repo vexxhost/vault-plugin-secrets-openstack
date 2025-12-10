@@ -39,22 +39,6 @@ func pathConfigAccess(b *backend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: "Domain name for user authentication",
 			},
-			"project_id": {
-				Type:        framework.TypeString,
-				Description: "Project ID for scoping",
-			},
-			"project_name": {
-				Type:        framework.TypeString,
-				Description: "Project name for scoping",
-			},
-			"project_domain_id": {
-				Type:        framework.TypeString,
-				Description: "Domain ID for project scoping",
-			},
-			"project_domain_name": {
-				Type:        framework.TypeString,
-				Description: "Domain name for project scoping",
-			},
 			"application_credential_id": {
 				Type:        framework.TypeString,
 				Description: "Application credential ID for authentication",
@@ -141,10 +125,6 @@ func (b *backend) pathConfigAccessRead(ctx context.Context, req *logical.Request
 			"username":                    conf.Username,
 			"user_domain_id":              conf.UserDomainID,
 			"user_domain_name":            conf.UserDomainName,
-			"project_id":                  conf.ProjectID,
-			"project_name":                conf.ProjectName,
-			"project_domain_id":           conf.ProjectDomainID,
-			"project_domain_name":         conf.ProjectDomainName,
 			"application_credential_id":   conf.ApplicationCredentialID,
 			"application_credential_name": conf.ApplicationCredentialName,
 			"region_name":                 conf.RegionName,
@@ -181,18 +161,6 @@ func (b *backend) pathConfigAccessWrite(ctx context.Context, req *logical.Reques
 	}
 	if userDomainName, ok := data.GetOk("user_domain_name"); ok {
 		conf.UserDomainName = userDomainName.(string)
-	}
-	if projectID, ok := data.GetOk("project_id"); ok {
-		conf.ProjectID = projectID.(string)
-	}
-	if projectName, ok := data.GetOk("project_name"); ok {
-		conf.ProjectName = projectName.(string)
-	}
-	if projectDomainID, ok := data.GetOk("project_domain_id"); ok {
-		conf.ProjectDomainID = projectDomainID.(string)
-	}
-	if projectDomainName, ok := data.GetOk("project_domain_name"); ok {
-		conf.ProjectDomainName = projectDomainName.(string)
 	}
 	if appCredID, ok := data.GetOk("application_credential_id"); ok {
 		conf.ApplicationCredentialID = appCredID.(string)
@@ -244,10 +212,6 @@ type Config struct {
 	Password                    string `json:"password"`
 	UserDomainID                string `json:"user_domain_id"`
 	UserDomainName              string `json:"user_domain_name"`
-	ProjectID                   string `json:"project_id"`
-	ProjectName                 string `json:"project_name"`
-	ProjectDomainID             string `json:"project_domain_id"`
-	ProjectDomainName           string `json:"project_domain_name"`
 	ApplicationCredentialID     string `json:"application_credential_id"`
 	ApplicationCredentialName   string `json:"application_credential_name"`
 	ApplicationCredentialSecret string `json:"application_credential_secret"`
@@ -258,7 +222,11 @@ type Config struct {
 	Insecure                    bool   `json:"insecure"`
 }
 
-func (c *Config) AuthOptions() *gophercloud.AuthOptions {
+func (c *Config) UsesApplicationCredential() bool {
+	return c.ApplicationCredentialID != "" || c.ApplicationCredentialName != ""
+}
+
+func (c *Config) AuthOptions(projectID, projectName string) *gophercloud.AuthOptions {
 	return &gophercloud.AuthOptions{
 		IdentityEndpoint:            c.AuthURL,
 		UserID:                      c.UserID,
@@ -266,8 +234,8 @@ func (c *Config) AuthOptions() *gophercloud.AuthOptions {
 		Password:                    c.Password,
 		DomainID:                    c.UserDomainID,
 		DomainName:                  c.UserDomainName,
-		TenantID:                    c.ProjectID,
-		TenantName:                  c.ProjectName,
+		TenantID:                    projectID,
+		TenantName:                  projectName,
 		ApplicationCredentialID:     c.ApplicationCredentialID,
 		ApplicationCredentialName:   c.ApplicationCredentialName,
 		ApplicationCredentialSecret: c.ApplicationCredentialSecret,

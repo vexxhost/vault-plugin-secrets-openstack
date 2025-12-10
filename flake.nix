@@ -23,6 +23,7 @@
         devShell = pkgs.mkShell {
           buildInputs = with pkgs; [
             go_1_25
+            golangci-lint
           ];
         };
       }

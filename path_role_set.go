@@ -29,6 +29,22 @@ func pathRoles(b *backend) *framework.Path {
 				Type:        framework.TypeString,
 				Description: "Name of the role set",
 			},
+			"project_id": {
+				Type:        framework.TypeString,
+				Description: "Project ID for scoping the application credential",
+			},
+			"project_name": {
+				Type:        framework.TypeString,
+				Description: "Project name for scoping the application credential",
+			},
+			"project_domain_id": {
+				Type:        framework.TypeString,
+				Description: "Domain ID for project scoping",
+			},
+			"project_domain_name": {
+				Type:        framework.TypeString,
+				Description: "Domain name for project scoping",
+			},
 			"roles": {
 				Type:        framework.TypeString,
 				Description: "JSON array of roles for the application credential",
@@ -95,7 +111,11 @@ func (b *backend) pathRolesRead(ctx context.Context, req *logical.Request, d *fr
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"roles": role.Roles,
+			"project_id":          role.ProjectID,
+			"project_name":        role.ProjectName,
+			"project_domain_id":   role.ProjectDomainID,
+			"project_domain_name": role.ProjectDomainName,
+			"roles":               role.Roles,
 		},
 	}, nil
 }
@@ -111,6 +131,18 @@ func (b *backend) pathRolesWrite(ctx context.Context, req *logical.Request, d *f
 		role = new(RoleSet)
 	}
 
+	if projectID, ok := d.GetOk("project_id"); ok {
+		role.ProjectID = projectID.(string)
+	}
+	if projectName, ok := d.GetOk("project_name"); ok {
+		role.ProjectName = projectName.(string)
+	}
+	if projectDomainID, ok := d.GetOk("project_domain_id"); ok {
+		role.ProjectDomainID = projectDomainID.(string)
+	}
+	if projectDomainName, ok := d.GetOk("project_domain_name"); ok {
+		role.ProjectDomainName = projectDomainName.(string)
+	}
 	if rawRoles, ok := d.GetOk("roles"); ok {
 		var roles []applicationcredentials.Role
 		if err := json.Unmarshal([]byte(rawRoles.(string)), &roles); err != nil {
@@ -140,5 +172,13 @@ func (b *backend) pathRolesDelete(ctx context.Context, req *logical.Request, d *
 }
 
 type RoleSet struct {
-	Roles []applicationcredentials.Role `json:"roles,omitempty"`
+	ProjectID         string                       `json:"project_id,omitempty"`
+	ProjectName       string                       `json:"project_name,omitempty"`
+	ProjectDomainID   string                       `json:"project_domain_id,omitempty"`
+	ProjectDomainName string                       `json:"project_domain_name,omitempty"`
+	Roles             []applicationcredentials.Role `json:"roles,omitempty"`
+}
+
+func (r *RoleSet) HasProject() bool {
+	return r.ProjectID != "" || r.ProjectName != ""
 }

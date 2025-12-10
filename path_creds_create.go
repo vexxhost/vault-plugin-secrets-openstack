@@ -54,7 +54,17 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 		return logical.ErrorResponse("access config not found"), nil
 	}
 
-	identityClient, err := client(ctx, cfg)
+	// Validate: app credentials cannot be used with project-scoped rolesets
+	if cfg.UsesApplicationCredential() && role.HasProject() {
+		return logical.ErrorResponse(
+			"cannot use application credential authentication with project-scoped rolesets; " +
+				"application credentials are bound to their original project. " +
+				"Use username/password authentication for multi-project support, " +
+				"or remove project fields from the roleset",
+		), nil
+	}
+
+	identityClient, err := client(ctx, cfg, role)
 	if err != nil {
 		return nil, fmt.Errorf("error creating identity client: %w", err)
 	}
@@ -78,6 +88,7 @@ func (b *backend) pathTokenRead(ctx context.Context, req *logical.Request, d *fr
 		"application_credential_secret": credential.Secret,
 	}, map[string]interface{}{
 		"application_credential_id": credential.ID,
+		"roleset":                   name,
 	})
 	resp.Secret.TTL = leaseConfig.TTL
 

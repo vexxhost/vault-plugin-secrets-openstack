@@ -12,8 +12,8 @@ import (
 	"github.com/gophercloud/gophercloud/v2/openstack/config"
 )
 
-func client(ctx context.Context, cfg *Config) (*gophercloud.ServiceClient, error) {
-	authOpts := cfg.AuthOptions()
+func client(ctx context.Context, cfg *Config, role *RoleSet) (*gophercloud.ServiceClient, error) {
+	authOpts := cfg.AuthOptions(role.ProjectID, role.ProjectName)
 
 	// Build TLS config from stored configuration
 	if (cfg.Cert != "" && cfg.Key == "") || (cfg.Cert == "" && cfg.Key != "") {
