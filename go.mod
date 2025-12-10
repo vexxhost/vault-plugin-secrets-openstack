@@ -2,7 +2,7 @@ module github.com/vexxhost/vault-plugin-secrets-openstack
 
 go 1.25.0
 
-toolchain go1.25.4
+toolchain go1.25.5
 
 require (
 	github.com/gophercloud/gophercloud/v2 v2.9.0
