@@ -30,24 +30,34 @@ by running the following:
 ```shell
 vault secrets enable -path="openstack" -plugin-name="vault-plugin-secrets-openstack" plugin
 vault write openstack/config/lease ttl=60
-vault write openstack/config/auth IdentityEndpoint="https://auth.vexxhost.net/v3" \
-                                    UserID="<user_id>" \
-                                    Password="<password>" \
-                                    TenantID="<tenant_id>"
+vault write openstack/config/auth auth_url="https://auth.vexxhost.net/v3" \
+                                    user_id="<user_id>" \
+                                    password="<password>" \
+                                    project_id="<project_id>"
 ```
 
 The example above configures a default lease of 60 seconds and points to the
 VEXXHOST public cloud authentication endpoint.  You'll need to replace your
-user ID, password and tenant ID in the example above.  There are some other
-configuration options that you can use which you can lookup using `vault read
-openstack/config/auth` command.
+user ID, password and project ID in the example above.
+
+Additional configuration options are available:
+
+- `username` - Username for authentication (alternative to `user_id`)
+- `user_domain_id` / `user_domain_name` - Domain for user authentication
+- `project_name` - Project name (alternative to `project_id`)
+- `project_domain_id` / `project_domain_name` - Domain for project scoping
+- `application_credential_id` / `application_credential_name` / `application_credential_secret` - Application credential authentication
+- `region_name` - Region name for endpoint selection
+- `cacert` - PEM-encoded CA certificate for TLS verification
+- `cert` / `key` - PEM-encoded client certificate and key for mutual TLS
+- `insecure` - Skip TLS verification (not recommended for production)
 
 The next step you'll need to do is create a roleset which will be used when
 creating application credentials.  In this example, it is using the default
 member role inside the VEXXHOST public cloud.
 
 ```shell
-vault write openstack/roleset/member Roles=-<<EOF
+vault write openstack/roleset/member roles=-<<EOF
 [
   {
     "ID": "9fe2ff9ee4384b1894a90878d3e92bab"
