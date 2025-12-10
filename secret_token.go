@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gophercloud/gophercloud/v2/openstack/identity/v3/applicationcredentials"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -17,24 +18,27 @@ func secretToken(b *backend) *framework.Secret {
 	return &framework.Secret{
 		Type: SecretTokenType,
 		Fields: map[string]*framework.FieldSchema{
-			"token": &framework.FieldSchema{
+			"token": {
 				Type:        framework.TypeString,
-				Description: "Request token",
+				Description: "Application credential token",
 			},
 		},
-
 		Revoke: b.secretTokenRevoke,
 	}
 }
 
 func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
-	c, err := b.client(ctx, req.Storage)
+	cfg, err := b.readConfigAccess(ctx, req.Storage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error reading access config: %w", err)
+	}
+	if cfg == nil {
+		return nil, errors.New("access config not found")
 	}
 
-	if c == nil {
-		return nil, fmt.Errorf("error retrieving appCredentialClient: %w", err)
+	identityClient, err := client(ctx, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("error creating identity client: %w", err)
 	}
 
 	IDRaw, ok := req.Secret.InternalData["application_credential_id"]
@@ -46,7 +50,7 @@ func (b *backend) secretTokenRevoke(ctx context.Context, req *logical.Request, d
 		return nil, errors.New("unable to convert accessor_id")
 	}
 
-	if err := c.Delete(id); err != nil {
+	if err := applicationcredentials.Delete(ctx, identityClient, cfg.UserID, id).ExtractErr(); err != nil {
 		return nil, err
 	}
 

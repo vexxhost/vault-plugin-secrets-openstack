@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
+	"github.com/gophercloud/gophercloud/v2/openstack/identity/v3/applicationcredentials"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -25,33 +25,25 @@ func pathRoles(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: "roleset/" + framework.GenericNameRegex("name"),
 		Fields: map[string]*framework.FieldSchema{
-			"name": &framework.FieldSchema{
+			"name": {
 				Type:        framework.TypeString,
-				Description: "Name of the roleset",
+				Description: "Name of the role set",
 			},
-			"Roles": &framework.FieldSchema{
+			"roles": {
 				Type:        framework.TypeString,
-				Description: "List of the roles that the application credential has associated",
+				Description: "JSON array of roles for the application credential",
 			},
-			// "AccessRules": &framework.FieldSchema{
-			// 	Type:        framework.TypeString,
-			// 	Description: "List of the access rules",
-			// },
 		},
-
 		Callbacks: map[logical.Operation]framework.OperationFunc{
 			logical.ReadOperation:   b.pathRolesRead,
 			logical.CreateOperation: b.pathRolesWrite,
 			logical.UpdateOperation: b.pathRolesWrite,
 			logical.DeleteOperation: b.pathRolesDelete,
 		},
-
 		ExistenceCheck: b.rolesExistenceCheck,
 	}
 }
 
-// Establishes dichotomy of request operation between CreateOperation and UpdateOperation.
-// Returning 'true' forces an UpdateOperation, CreateOperation otherwise.
 func (b *backend) rolesExistenceCheck(ctx context.Context, req *logical.Request, d *framework.FieldData) (bool, error) {
 	name := d.Get("name").(string)
 	entry, err := b.Role(ctx, req.Storage, name)
@@ -101,14 +93,11 @@ func (b *backend) pathRolesRead(ctx context.Context, req *logical.Request, d *fr
 		return nil, nil
 	}
 
-	// Generate the response
-	resp := &logical.Response{
+	return &logical.Response{
 		Data: map[string]interface{}{
-			"Roles": role.Roles,
-			// "AccessRules": role.AccessRules,
+			"roles": role.Roles,
 		},
-	}
-	return resp, nil
+	}, nil
 }
 
 func (b *backend) pathRolesWrite(ctx context.Context, req *logical.Request, d *framework.FieldData) (*logical.Response, error) {
@@ -122,20 +111,13 @@ func (b *backend) pathRolesWrite(ctx context.Context, req *logical.Request, d *f
 		role = new(RoleSet)
 	}
 
-	rawRoles, ok := d.GetOk("Roles")
-	if ok {
-		roles := make([]applicationcredentials.Role, 0, 10)
-		err := json.Unmarshal([]byte(rawRoles.(string)), &roles)
-		if err != nil {
-			return nil, err
+	if rawRoles, ok := d.GetOk("roles"); ok {
+		var roles []applicationcredentials.Role
+		if err := json.Unmarshal([]byte(rawRoles.(string)), &roles); err != nil {
+			return nil, fmt.Errorf("invalid roles JSON: %w", err)
 		}
 		role.Roles = roles
 	}
-
-	// rawAccessRules, ok := d.GetOk("AccessRules")
-	// if ok {
-	// 	role.AccessRules = rawAccessRules.([]applicationcredentials.AccessRule)
-	// }
 
 	entry, err := logical.StorageEntryJSON("roleset/"+name, role)
 	if err != nil {
@@ -159,5 +141,4 @@ func (b *backend) pathRolesDelete(ctx context.Context, req *logical.Request, d *
 
 type RoleSet struct {
 	Roles []applicationcredentials.Role `json:"roles,omitempty"`
-	// AccessRules []applicationcredentials.AccessRule `json:"access_rules,omitempty"`
 }

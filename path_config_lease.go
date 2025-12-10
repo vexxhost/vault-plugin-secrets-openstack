@@ -14,18 +14,16 @@ func pathConfigLease(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: "config/lease",
 		Fields: map[string]*framework.FieldSchema{
-			"ttl": &framework.FieldSchema{
+			"ttl": {
 				Type:        framework.TypeDurationSecond,
-				Description: "Duration after which the issued token is revoked",
+				Description: "Duration after which the issued credential is revoked",
 			},
 		},
-
 		Callbacks: map[logical.Operation]framework.OperationFunc{
 			logical.ReadOperation:   b.pathLeaseRead,
 			logical.UpdateOperation: b.pathLeaseUpdate,
 			logical.DeleteOperation: b.pathLeaseDelete,
 		},
-
 		HelpSynopsis:    pathConfigLeaseHelpSyn,
 		HelpDescription: pathConfigLeaseHelpDesc,
 	}
@@ -91,7 +89,7 @@ func (b *backend) LeaseConfig(ctx context.Context, s logical.Storage) (*configLe
 
 // Lease configuration information for the secrets issued by this backend
 type configLease struct {
-	TTL time.Duration `json:"ttl" mapstructure:"ttl"`
+	TTL time.Duration `json:"ttl"`
 }
 
 var pathConfigLeaseHelpSyn = "Configure the lease parameters for generated tokens"

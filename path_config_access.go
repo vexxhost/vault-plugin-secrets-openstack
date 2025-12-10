@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gophercloud/gophercloud/v2"
 	"github.com/hashicorp/vault/sdk/framework"
 	"github.com/hashicorp/vault/sdk/logical"
 )
@@ -14,73 +15,86 @@ func pathConfigAccess(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: configAccessKey,
 		Fields: map[string]*framework.FieldSchema{
-			"IdentityEndpoint": &framework.FieldSchema{
+			"auth_url": {
 				Type:        framework.TypeString,
-				Description: "Identity address",
+				Description: "OpenStack authentication URL",
 			},
-
-			"UserID": &framework.FieldSchema{
+			"user_id": {
 				Type:        framework.TypeString,
-				Description: "UserID",
+				Description: "User ID for authentication",
 			},
-
-			"Username": &framework.FieldSchema{
+			"username": {
 				Type:        framework.TypeString,
-				Description: "Username",
+				Description: "Username for authentication",
 			},
-
-			"Password": &framework.FieldSchema{
+			"password": {
 				Type:        framework.TypeString,
-				Description: "Password",
+				Description: "Password for authentication",
 			},
-
-			"ApplicationCredentialID": &framework.FieldSchema{
+			"user_domain_id": {
 				Type:        framework.TypeString,
-				Description: "ApplicationCredentialID",
+				Description: "Domain ID for user authentication",
 			},
-
-			"ApplicationCredentialName": &framework.FieldSchema{
+			"user_domain_name": {
 				Type:        framework.TypeString,
-				Description: "ApplicationCredentialName",
+				Description: "Domain name for user authentication",
 			},
-
-			"ApplicationCredentialSecret": &framework.FieldSchema{
+			"project_id": {
 				Type:        framework.TypeString,
-				Description: "ApplicationCredentialSecret",
+				Description: "Project ID for scoping",
 			},
-
-			"TenantID": &framework.FieldSchema{
+			"project_name": {
 				Type:        framework.TypeString,
-				Description: "TenantID",
+				Description: "Project name for scoping",
 			},
-
-			"TenantName": &framework.FieldSchema{
+			"project_domain_id": {
 				Type:        framework.TypeString,
-				Description: "TenantName",
+				Description: "Domain ID for project scoping",
 			},
-
-			"DomainID": &framework.FieldSchema{
+			"project_domain_name": {
 				Type:        framework.TypeString,
-				Description: "DomainID",
+				Description: "Domain name for project scoping",
 			},
-
-			"DomainName": &framework.FieldSchema{
+			"application_credential_id": {
 				Type:        framework.TypeString,
-				Description: "DomainName",
+				Description: "Application credential ID for authentication",
 			},
-			"Region": &framework.FieldSchema{
+			"application_credential_name": {
 				Type:        framework.TypeString,
-				Description: "Name of the region",
+				Description: "Application credential name for authentication",
+			},
+			"application_credential_secret": {
+				Type:        framework.TypeString,
+				Description: "Application credential secret for authentication",
+			},
+			"region_name": {
+				Type:        framework.TypeString,
+				Description: "Region name for endpoint selection",
+			},
+			"cacert": {
+				Type:        framework.TypeString,
+				Description: "PEM-encoded CA certificate for TLS verification",
+			},
+			"cert": {
+				Type:        framework.TypeString,
+				Description: "PEM-encoded client certificate for mutual TLS",
+			},
+			"key": {
+				Type:        framework.TypeString,
+				Description: "PEM-encoded client key for mutual TLS",
+			},
+			"insecure": {
+				Type:        framework.TypeBool,
+				Description: "Skip TLS verification (not recommended for production)",
+				Default:     false,
 			},
 		},
-
 		Callbacks: map[logical.Operation]framework.OperationFunc{
 			logical.ReadOperation:   b.pathConfigAccessRead,
 			logical.CreateOperation: b.pathConfigAccessWrite,
 			logical.UpdateOperation: b.pathConfigAccessWrite,
 			logical.DeleteOperation: b.pathConfigAccessDelete,
 		},
-
 		ExistenceCheck: b.configExistenceCheck,
 	}
 }
@@ -94,7 +108,7 @@ func (b *backend) configExistenceCheck(ctx context.Context, req *logical.Request
 	return entry != nil, nil
 }
 
-func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage) (*authOptions, error) {
+func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage) (*Config, error) {
 	entry, err := storage.Get(ctx, configAccessKey)
 	if err != nil {
 		return nil, err
@@ -103,9 +117,9 @@ func (b *backend) readConfigAccess(ctx context.Context, storage logical.Storage)
 		return nil, nil
 	}
 
-	conf := &authOptions{}
+	conf := &Config{}
 	if err := entry.DecodeJSON(conf); err != nil {
-		return nil, fmt.Errorf("error reading nomad access configuration: %w", err)
+		return nil, fmt.Errorf("error reading OpenStack access configuration: %w", err)
 	}
 
 	return conf, nil
@@ -122,16 +136,21 @@ func (b *backend) pathConfigAccessRead(ctx context.Context, req *logical.Request
 
 	return &logical.Response{
 		Data: map[string]interface{}{
-			"IdentityEndpoint":          conf.IdentityEndpoint,
-			"UserID":                    conf.UserID,
-			"Username":                  conf.Username,
-			"TenantID":                  conf.TenantID,
-			"TenantName":                conf.TenantName,
-			"DomainID":                  conf.DomainID,
-			"DomainName":                conf.DomainName,
-			"ApplicationCredentialID":   conf.ApplicationCredentialID,
-			"ApplicationCredentialName": conf.ApplicationCredentialName,
-			"Region":                    conf.Region,
+			"auth_url":                    conf.AuthURL,
+			"user_id":                     conf.UserID,
+			"username":                    conf.Username,
+			"user_domain_id":              conf.UserDomainID,
+			"user_domain_name":            conf.UserDomainName,
+			"project_id":                  conf.ProjectID,
+			"project_name":                conf.ProjectName,
+			"project_domain_id":           conf.ProjectDomainID,
+			"project_domain_name":         conf.ProjectDomainName,
+			"application_credential_id":   conf.ApplicationCredentialID,
+			"application_credential_name": conf.ApplicationCredentialName,
+			"region_name":                 conf.RegionName,
+			"cacert":                      conf.CACert,
+			"cert":                        conf.Cert,
+			"insecure":                    conf.Insecure,
 		},
 	}, nil
 }
@@ -142,56 +161,62 @@ func (b *backend) pathConfigAccessWrite(ctx context.Context, req *logical.Reques
 		return nil, err
 	}
 	if conf == nil {
-		conf = &authOptions{}
+		conf = &Config{}
 	}
 
-	auth_url, ok := data.GetOk("IdentityEndpoint")
-	if ok {
-		conf.IdentityEndpoint = auth_url.(string)
+	if authURL, ok := data.GetOk("auth_url"); ok {
+		conf.AuthURL = authURL.(string)
 	}
-	user_id, ok := data.GetOk("UserID")
-	if ok {
-		conf.UserID = user_id.(string)
+	if userID, ok := data.GetOk("user_id"); ok {
+		conf.UserID = userID.(string)
 	}
-	username, ok := data.GetOk("Username")
-	if ok {
+	if username, ok := data.GetOk("username"); ok {
 		conf.Username = username.(string)
 	}
-	password, ok := data.GetOk("Password")
-	if ok {
+	if password, ok := data.GetOk("password"); ok {
 		conf.Password = password.(string)
 	}
-	project_id, ok := data.GetOk("TenantID")
-	if ok {
-		conf.TenantID = project_id.(string)
+	if userDomainID, ok := data.GetOk("user_domain_id"); ok {
+		conf.UserDomainID = userDomainID.(string)
 	}
-	project_name, ok := data.GetOk("TenantName")
-	if ok {
-		conf.TenantName = project_name.(string)
+	if userDomainName, ok := data.GetOk("user_domain_name"); ok {
+		conf.UserDomainName = userDomainName.(string)
 	}
-	domain_id, ok := data.GetOk("DomainID")
-	if ok {
-		conf.DomainID = domain_id.(string)
+	if projectID, ok := data.GetOk("project_id"); ok {
+		conf.ProjectID = projectID.(string)
 	}
-	domain_name, ok := data.GetOk("DomainName")
-	if ok {
-		conf.DomainName = domain_name.(string)
+	if projectName, ok := data.GetOk("project_name"); ok {
+		conf.ProjectName = projectName.(string)
 	}
-	credential_id, ok := data.GetOk("ApplicationCredentialID")
-	if ok {
-		conf.ApplicationCredentialID = credential_id.(string)
+	if projectDomainID, ok := data.GetOk("project_domain_id"); ok {
+		conf.ProjectDomainID = projectDomainID.(string)
 	}
-	credential_name, ok := data.GetOk("ApplicationCredentialName")
-	if ok {
-		conf.ApplicationCredentialName = credential_name.(string)
+	if projectDomainName, ok := data.GetOk("project_domain_name"); ok {
+		conf.ProjectDomainName = projectDomainName.(string)
 	}
-	credential_secret, ok := data.GetOk("ApplicationCredentialSecret")
-	if ok {
-		conf.ApplicationCredentialSecret = credential_secret.(string)
+	if appCredID, ok := data.GetOk("application_credential_id"); ok {
+		conf.ApplicationCredentialID = appCredID.(string)
 	}
-	region, ok := data.GetOk("Region")
-	if ok {
-		conf.Region = region.(string)
+	if appCredName, ok := data.GetOk("application_credential_name"); ok {
+		conf.ApplicationCredentialName = appCredName.(string)
+	}
+	if appCredSecret, ok := data.GetOk("application_credential_secret"); ok {
+		conf.ApplicationCredentialSecret = appCredSecret.(string)
+	}
+	if regionName, ok := data.GetOk("region_name"); ok {
+		conf.RegionName = regionName.(string)
+	}
+	if cacert, ok := data.GetOk("cacert"); ok {
+		conf.CACert = cacert.(string)
+	}
+	if cert, ok := data.GetOk("cert"); ok {
+		conf.Cert = cert.(string)
+	}
+	if key, ok := data.GetOk("key"); ok {
+		conf.Key = key.(string)
+	}
+	if insecure, ok := data.GetOk("insecure"); ok {
+		conf.Insecure = insecure.(bool)
 	}
 
 	entry, err := logical.StorageEntryJSON(configAccessKey, conf)
@@ -212,17 +237,39 @@ func (b *backend) pathConfigAccessDelete(ctx context.Context, req *logical.Reque
 	return nil, nil
 }
 
-type authOptions struct {
-	IdentityEndpoint            string
-	UserID                      string
-	Username                    string
-	Password                    string
-	TenantID                    string
-	TenantName                  string
-	DomainID                    string
-	DomainName                  string
-	ApplicationCredentialID     string
-	ApplicationCredentialName   string
-	ApplicationCredentialSecret string
-	Region                      string
+type Config struct {
+	AuthURL                     string `json:"auth_url"`
+	UserID                      string `json:"user_id"`
+	Username                    string `json:"username"`
+	Password                    string `json:"password"`
+	UserDomainID                string `json:"user_domain_id"`
+	UserDomainName              string `json:"user_domain_name"`
+	ProjectID                   string `json:"project_id"`
+	ProjectName                 string `json:"project_name"`
+	ProjectDomainID             string `json:"project_domain_id"`
+	ProjectDomainName           string `json:"project_domain_name"`
+	ApplicationCredentialID     string `json:"application_credential_id"`
+	ApplicationCredentialName   string `json:"application_credential_name"`
+	ApplicationCredentialSecret string `json:"application_credential_secret"`
+	RegionName                  string `json:"region_name"`
+	CACert                      string `json:"cacert"`
+	Cert                        string `json:"cert"`
+	Key                         string `json:"key"`
+	Insecure                    bool   `json:"insecure"`
+}
+
+func (c *Config) AuthOptions() *gophercloud.AuthOptions {
+	return &gophercloud.AuthOptions{
+		IdentityEndpoint:            c.AuthURL,
+		UserID:                      c.UserID,
+		Username:                    c.Username,
+		Password:                    c.Password,
+		DomainID:                    c.UserDomainID,
+		DomainName:                  c.UserDomainName,
+		TenantID:                    c.ProjectID,
+		TenantName:                  c.ProjectName,
+		ApplicationCredentialID:     c.ApplicationCredentialID,
+		ApplicationCredentialName:   c.ApplicationCredentialName,
+		ApplicationCredentialSecret: c.ApplicationCredentialSecret,
+	}
 }

@@ -2,58 +2,53 @@ package openstack
 
 import (
 	"context"
-	"time"
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
+	"fmt"
 
-	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack/identity/v3/applicationcredentials"
-	"github.com/hashicorp/vault/sdk/logical"
-	"github.com/vexxhost/vault-plugin-secrets-openstack/utils"
+	"github.com/gophercloud/gophercloud/v2"
+	"github.com/gophercloud/gophercloud/v2/openstack"
+	"github.com/gophercloud/gophercloud/v2/openstack/config"
 )
 
-type appCredentialClient struct {
-	serviceClient *gophercloud.ServiceClient
-	userID        string
-}
+func client(ctx context.Context, cfg *Config) (*gophercloud.ServiceClient, error) {
+	authOpts := cfg.AuthOptions()
 
-func (b *backend) client(ctx context.Context, s logical.Storage) (*appCredentialClient, error) {
-	authConfig, err := b.readConfigAccess(ctx, s)
+	// Build TLS config from stored configuration
+	if (cfg.Cert != "" && cfg.Key == "") || (cfg.Cert == "" && cfg.Key != "") {
+		return nil, errors.New("either both cert and key or none must be provided")
+	}
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: cfg.Insecure,
+	}
+
+	if cfg.Cert != "" {
+		cert, err := tls.X509KeyPair([]byte(cfg.Cert), []byte(cfg.Key))
+		if err != nil {
+			return nil, fmt.Errorf("parse TLS cert: %w", err)
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if cfg.CACert != "" {
+		roots := x509.NewCertPool()
+		if !roots.AppendCertsFromPEM([]byte(cfg.CACert)) {
+			return nil, errors.New("failed to parse CA certificates")
+		}
+		tlsConfig.RootCAs = roots
+	}
+
+	providerClient, err := config.NewProviderClient(ctx, *authOpts, config.WithTLSConfig(tlsConfig))
 	if err != nil {
-		b.Logger().Warn("get access config", "error", err)
 		return nil, err
 	}
 
-	authOpts := gophercloud.AuthOptions{
-		IdentityEndpoint:            authConfig.IdentityEndpoint,
-		UserID:                      authConfig.UserID,
-		Username:                    authConfig.Username,
-		Password:                    authConfig.Password,
-		TenantID:                    authConfig.TenantID,
-		TenantName:                  authConfig.TenantName,
-		DomainID:                    authConfig.DomainID,
-		DomainName:                  authConfig.DomainName,
-		ApplicationCredentialID:     authConfig.ApplicationCredentialID,
-		ApplicationCredentialName:   authConfig.ApplicationCredentialName,
-		ApplicationCredentialSecret: authConfig.ApplicationCredentialSecret,
-	}
-	regionName := authConfig.Region
-
-	// Get the service client
-	serviceClient, err := utils.OpenstackClient(authOpts, regionName)
+	identityClient, err := openstack.NewIdentityV3(providerClient, gophercloud.EndpointOpts{Region: cfg.RegionName})
 	if err != nil {
-		b.Logger().Warn("get openstackclient", "error", err)
 		return nil, err
 	}
 
-	return &appCredentialClient{
-		serviceClient: serviceClient,
-		userID:        authOpts.UserID,
-	}, nil
-}
-
-func (c *appCredentialClient) Create(name string, roles []applicationcredentials.Role, ttl time.Duration) (string, string, error) { //, accessrules []applicationcredentials.AccessRule
-	return utils.CreateApplicationCredential(c.serviceClient, c.userID, name, roles, ttl) //, accessrules
-}
-
-func (c *appCredentialClient) Delete(id string) error {
-	return utils.DeleteApplicationCredential(c.serviceClient, c.userID, id)
+	return identityClient, nil
 }
