@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.5
 
 require (
-	github.com/gophercloud/gophercloud/v2 v2.9.0
+	github.com/gophercloud/gophercloud/v2 v2.10.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/hashicorp/vault/sdk v0.20.0
