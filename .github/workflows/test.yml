@@ -34,7 +34,7 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test ./... -coverprofile=./cover.out
-      - uses: vladopajic/go-test-coverage@d9ec07b8799c458a7bc1f9b36d14261746d63529 # v2.18.0
+      - uses: vladopajic/go-test-coverage@f94bcf0d6b9fa5fb8b783830b22648f6c17475e2 # v2.19.0
         with:
           profile: cover.out
           local-prefix: github.com/vexxhost/vault-plugin-secrets-openstack
