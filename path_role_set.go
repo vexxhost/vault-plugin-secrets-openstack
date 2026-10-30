@@ -15,8 +15,8 @@ func pathListRoles(b *backend) *framework.Path {
 	return &framework.Path{
 		Pattern: "roleset/?$",
 
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ListOperation: b.pathRoleList,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ListOperation: &framework.PathOperation{Callback: b.pathRoleList},
 		},
 	}
 }
@@ -50,11 +50,11 @@ func pathRoles(b *backend) *framework.Path {
 				Description: "JSON array of roles for the application credential",
 			},
 		},
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ReadOperation:   b.pathRolesRead,
-			logical.CreateOperation: b.pathRolesWrite,
-			logical.UpdateOperation: b.pathRolesWrite,
-			logical.DeleteOperation: b.pathRolesDelete,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ReadOperation:   &framework.PathOperation{Callback: b.pathRolesRead},
+			logical.CreateOperation: &framework.PathOperation{Callback: b.pathRolesWrite},
+			logical.UpdateOperation: &framework.PathOperation{Callback: b.pathRolesWrite},
+			logical.DeleteOperation: &framework.PathOperation{Callback: b.pathRolesDelete},
 		},
 		ExistenceCheck: b.rolesExistenceCheck,
 	}
@@ -172,10 +172,10 @@ func (b *backend) pathRolesDelete(ctx context.Context, req *logical.Request, d *
 }
 
 type RoleSet struct {
-	ProjectID         string                       `json:"project_id,omitempty"`
-	ProjectName       string                       `json:"project_name,omitempty"`
-	ProjectDomainID   string                       `json:"project_domain_id,omitempty"`
-	ProjectDomainName string                       `json:"project_domain_name,omitempty"`
+	ProjectID         string                        `json:"project_id,omitempty"`
+	ProjectName       string                        `json:"project_name,omitempty"`
+	ProjectDomainID   string                        `json:"project_domain_id,omitempty"`
+	ProjectDomainName string                        `json:"project_domain_name,omitempty"`
 	Roles             []applicationcredentials.Role `json:"roles,omitempty"`
 }
 
