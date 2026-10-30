@@ -19,8 +19,8 @@ func pathCreateCreds(b *backend) *framework.Path {
 				Description: "Name of the role set",
 			},
 		},
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ReadOperation: b.pathTokenRead,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ReadOperation: &framework.PathOperation{Callback: b.pathTokenRead},
 		},
 	}
 }

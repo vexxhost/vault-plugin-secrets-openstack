@@ -19,10 +19,10 @@ func pathConfigLease(b *backend) *framework.Path {
 				Description: "Duration after which the issued credential is revoked",
 			},
 		},
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ReadOperation:   b.pathLeaseRead,
-			logical.UpdateOperation: b.pathLeaseUpdate,
-			logical.DeleteOperation: b.pathLeaseDelete,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ReadOperation:   &framework.PathOperation{Callback: b.pathLeaseRead},
+			logical.UpdateOperation: &framework.PathOperation{Callback: b.pathLeaseUpdate},
+			logical.DeleteOperation: &framework.PathOperation{Callback: b.pathLeaseDelete},
 		},
 		HelpSynopsis:    pathConfigLeaseHelpSyn,
 		HelpDescription: pathConfigLeaseHelpDesc,

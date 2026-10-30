@@ -73,11 +73,11 @@ func pathConfigAccess(b *backend) *framework.Path {
 				Default:     false,
 			},
 		},
-		Callbacks: map[logical.Operation]framework.OperationFunc{
-			logical.ReadOperation:   b.pathConfigAccessRead,
-			logical.CreateOperation: b.pathConfigAccessWrite,
-			logical.UpdateOperation: b.pathConfigAccessWrite,
-			logical.DeleteOperation: b.pathConfigAccessDelete,
+		Operations: map[logical.Operation]framework.OperationHandler{
+			logical.ReadOperation:   &framework.PathOperation{Callback: b.pathConfigAccessRead},
+			logical.CreateOperation: &framework.PathOperation{Callback: b.pathConfigAccessWrite},
+			logical.UpdateOperation: &framework.PathOperation{Callback: b.pathConfigAccessWrite},
+			logical.DeleteOperation: &framework.PathOperation{Callback: b.pathConfigAccessDelete},
 		},
 		ExistenceCheck: b.configExistenceCheck,
 	}
